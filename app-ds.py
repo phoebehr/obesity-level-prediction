@@ -1052,6 +1052,165 @@ elif page == "EDA":
             st.pyplot(g.fig)
             plt.close(g.fig)
 
+            # Chart 12: Horizontal Barplot for MTRANS vs FAF 
+            st.subheader("12. Average Physical Activity Frequency (FAF) by Transportation Method (MTRANS)")
+            fig, ax = plt.subplots(figsize=(9.5, 5))
+
+            df_mtrans = (
+                df.groupby('MTRANS')['FAF']
+                .mean()
+                .sort_values(ascending=False)
+                .reset_index()
+            )
+
+            custom_colors = ['#A3C863', '#EB8A66', '#92A1C3', '#6CB49C', '#D891C0']
+
+            sns.barplot(
+                data=df_mtrans,
+                x='FAF',
+                y='MTRANS',
+                palette=custom_colors,
+                ax=ax
+            )
+
+            
+            for i, row in df_mtrans.iterrows():
+                val = row['FAF']
+                ax.text(
+                    val / 2, 
+                    i, 
+                    f"{val:.2f} days", 
+                    ha='center', 
+                    va='center', 
+                    color='black', 
+                    fontweight='bold', 
+                    fontsize=10
+                )
+
+            ax.set_title("Average Physical Activity Frequency (FAF) by Transportation Method (MTRANS)", fontweight="bold", fontsize=11)
+            ax.set_xlabel("Mean Physical Activity Frequency (FAF: Days/Week)")
+            ax.set_ylabel("Transportation Method (MTRANS)")
+
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+
+            # Chart 13: Grouped Barplot for SCC & SMOKE on BMI 
+            st.subheader("13. Combined Impact of Calorie Monitoring (SCC) & Smoking (SMOKE) on BMI")
+            fig, ax = plt.subplots(figsize=(9, 5.5))
+
+            df_chart13 = df.copy()
+            if 'BMI' not in df_chart13.columns:
+                df_chart13['BMI'] = df_chart13['Weight'] / (df_chart13['Height'] ** 2)
+
+            scc_map = {'no': 'No SCC', 'yes': 'Monitors Calories'}
+            smoke_map = {'no': 'Non-Smoker', 'yes': 'Smoker'}
+
+            df_chart13['SCC_label'] = df_chart13['SCC'].map(scc_map)
+            df_chart13['SMOKE_label'] = df_chart13['SMOKE'].map(smoke_map)
+
+            scc_order = ['No SCC', 'Monitors Calories']
+            smoke_order = ['Non-Smoker', 'Smoker']
+
+            custom_colors = ['#169688', '#B55D61']
+
+            sns.barplot(
+                data=df_chart13,
+                x='SCC_label',
+                y='BMI',
+                hue='SMOKE_label',
+                order=scc_order,
+                hue_order=smoke_order,
+                palette=custom_colors,
+                errorbar=None,
+                edgecolor='white',
+                ax=ax
+            )
+
+            for p in ax.patches:
+                height = p.get_height()
+                if not np.isnan(height) and height > 0:
+                    ax.annotate(
+                        f"{height:.2f}",
+                        (p.get_x() + p.get_width() / 2., height),
+                        ha='center', va='bottom',
+                        xytext=(0, 4),
+                        textcoords='offset points',
+                        fontweight='bold',
+                        fontsize=10
+                    )
+
+            ax.set_title("Combined Impact of Calorie Monitoring (SCC) & Smoking (SMOKE) on BMI", fontweight="bold", fontsize=11)
+            ax.set_xlabel("Calorie Consumption Monitoring (SCC)")
+            ax.set_ylabel("Mean BMI (kg/m²)")
+
+            ax.set_ylim(0, 58)
+
+            ax.legend(title="Smoking Status", bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0.)
+
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+
+            # Chart 14: Transportation Method Disparities between Extreme Weight Groups
+            st.subheader("14. Transportation Method Disparities between Extreme Weight Groups")
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+            df_chart14 = df.copy()
+
+            mtrans_order = ['Motorbike', 'Walking', 'Public_Transportation', 'Automobile', 'Bike']
+            legend_labels = ['Motorbike', 'Walking', 'Public Transportation', 'Automobile', 'Bike']
+            custom_colors = ['#66C2A5', '#FC8D62', '#8DA0CB', '#E78AC3', '#A6D854']
+
+            df_normal = df_chart14[df_chart14['NObeyesdad'] == 'Normal_Weight']['MTRANS'].value_counts().reindex(mtrans_order).fillna(0)
+            df_obesity3 = df_chart14[df_chart14['NObeyesdad'] == 'Obesity_Type_III']['MTRANS'].value_counts().reindex(mtrans_order).fillna(0)
+
+            wedges1, texts1, autotexts1 = ax1.pie(
+                df_normal,
+                colors=custom_colors,
+                autopct=lambda p: f"{p:.1f}%" if p > 0.5 else '',
+                startangle=90,
+                counterclock=False,
+                pctdistance=0.75,
+                wedgeprops=dict(width=0.38, edgecolor='white', linewidth=1.5)
+            )
+            ax1.set_title("Normal Weight", fontweight="bold", fontsize=11)
+
+            wedges2, texts2, autotexts2 = ax2.pie(
+                df_obesity3,
+                colors=custom_colors,
+                autopct=lambda p: f"{p:.1f}%" if p > 0.1 else '',
+                startangle=90,
+                counterclock=False,
+                pctdistance=0.75,
+                wedgeprops=dict(width=0.38, edgecolor='white', linewidth=1.5)
+            )
+            ax2.set_title("Obesity Type III", fontweight="bold", fontsize=11)
+
+            for autotext in autotexts1 + autotexts2:
+                autotext.set_color('black')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(9)
+
+            fig.suptitle("Transportation Method Disparities between Extreme Weight Groups", fontweight="bold", fontsize=12, y=0.98)
+
+            fig.legend(
+                wedges1,
+                legend_labels,
+                title="Transportation Method",
+                loc="lower center",
+                ncol=5,
+                bbox_to_anchor=(0.5, -0.05),
+                frameon=True
+            )
+
+            plt.tight_layout(rect=[0, 0.08, 1, 0.95])
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+            
         # -----------------------------
         # SECTION 4: CHARTS 15–20
         # -----------------------------
@@ -1059,6 +1218,298 @@ elif page == "EDA":
             st.subheader("15–20. Advanced Risk Profiling")
             st.info("Additional advanced risk profile visualizations based on lifestyle and medical background.")
 
+            # Chart 15: Split Violin Plot for Gender & CALC on BMI 
+            st.subheader("15. Dual Effect of Gender & Alcohol Consumption (CALC) on BMI")
+            fig, ax = plt.subplots(figsize=(9.5, 5.5))
+
+            df_chart15 = df.copy()
+            if 'BMI' not in df_chart15.columns:
+                df_chart15['BMI'] = df_chart15['Weight'] / (df_chart15['Height'] ** 2)
+
+            calc_order = ['no', 'Sometimes', 'Frequently', 'Always']
+            gender_order = ['Female', 'Male']
+            custom_palette = {'Female': '#D77256', 'Male': '#38A398'}
+
+            sns.violinplot(
+                data=df_chart15,
+                x='CALC',
+                y='BMI',
+                hue='Gender',
+                order=calc_order,
+                hue_order=gender_order,
+                split=True,
+                inner='quartile',
+                palette=custom_palette,
+                linewidth=1.2,
+                ax=ax
+            )
+
+            ax.set_title("Dual Effect of Gender & Alcohol Consumption (CALC) on BMI", fontweight="bold", fontsize=12)
+            ax.set_xlabel("Alcohol Consumption Frequency (CALC)")
+            ax.set_ylabel("BMI (kg/m²)")
+
+            ax.legend(title="Gender", loc="upper right", frameon=True)
+
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+
+            # Chart 16: Grouped Barplot for Obesity Tier by SMOKE 
+            st.subheader("16. Obesity Tier Composition by Smoking Status (SMOKE)")
+            fig, ax = plt.subplots(figsize=(10, 5.5))
+
+            df_chart16 = df.copy()
+
+            smoke_map = {'no': 'Non-Smoker', 'yes': 'Smoker'}
+            df_chart16['SMOKE_label'] = df_chart16['SMOKE'].map(smoke_map)
+
+            smoke_order = ['Non-Smoker', 'Smoker']
+            tier_order = [
+                'Insufficient_Weight',
+                'Normal_Weight',
+                'Obesity_Type_I',
+                'Obesity_Type_II',
+                'Obesity_Type_III',
+                'Overweight_Level_I',
+                'Overweight_Level_II'
+            ]
+
+            df_prop = (
+                pd.crosstab(df_chart16['SMOKE_label'], df_chart16['NObeyesdad'], normalize='index') * 100
+            ).reindex(index=smoke_order, columns=tier_order).reset_index()
+
+            df_long = df_prop.melt(id_vars='SMOKE_label', var_name='NObeyesdad', value_name='Percentage')
+
+            set2_colors = ['#66C2A5', '#FC8D62', '#8DA0CB', '#A6D854', '#FFD92F', '#E5C494', '#B3B3B3']
+
+            sns.barplot(
+                data=df_long,
+                x='SMOKE_label',
+                y='Percentage',
+                hue='NObeyesdad',
+                hue_order=tier_order,
+                palette=set2_colors,
+                edgecolor='white',
+                linewidth=1,
+                ax=ax
+            )
+
+            for p in ax.patches:
+                height = p.get_height()
+                if not np.isnan(height) and height > 0:
+                    ax.annotate(
+                        f"{height:.1f}%",
+                        (p.get_x() + p.get_width() / 2., height),
+                        ha='center', va='bottom',
+                        xytext=(0, 3),
+                        textcoords='offset points',
+                        fontweight='bold',
+                        fontsize=7.5
+                    )
+
+            ax.set_title("Obesity Tier Composition by Smoking Status (SMOKE)", fontweight="bold", fontsize=12)
+            ax.set_xlabel("Smoking Status (SMOKE)")
+            ax.set_ylabel("Percentage (%)")
+
+            ax.set_ylim(0, 36)
+
+            ax.legend(title="Obesity Tier", bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0.)
+
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+
+            # Chart 17: Interaction Effect Plot for Family History & FAVC on BMI
+            st.subheader("17. Interaction Effect: Family History & High-Caloric Food (FAVC) on BMI")
+            fig, ax = plt.subplots(figsize=(9.5, 5.5))
+
+            df_chart17 = df.copy()
+            if 'BMI' not in df_chart17.columns:
+                df_chart17['BMI'] = df_chart17['Weight'] / (df_chart17['Height'] ** 2)
+
+            fam_order = ['yes', 'no']
+            favc_order = ['no', 'yes']
+            custom_palette = {'no': '#2EC4B6', 'yes': '#E06D53'}
+
+            sns.pointplot(
+                data=df_chart17,
+                x='family_history_with_overweight',
+                y='BMI',
+                hue='FAVC',
+                order=fam_order,
+                hue_order=favc_order,
+                palette=custom_palette,
+                markers=['o', 's'],
+                linestyles=['-', '--'],
+                errorbar=None,
+                scale=1.1,
+                ax=ax
+            )
+
+            ax.set_title("Interaction Effect: Family History & High-Caloric Food (FAVC) on BMI", fontweight="bold", fontsize=12)
+            ax.set_xlabel("Family History with Overweight")
+            ax.set_ylabel("Mean BMI (kg/m²)")
+
+            ax.legend(title="High Caloric Food (FAVC)", loc="upper left", frameon=True)
+
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+
+            # Chart 18: Cumulative Risk Score vs. Mean BMI 
+            st.subheader("18. Cumulative Risk Factor Score vs. Average BMI")
+            fig, ax = plt.subplots(figsize=(9.5, 5.5))
+
+            df_chart18 = df.copy()
+            if 'BMI' not in df_chart18.columns:
+                df_chart18['BMI'] = df_chart18['Weight'] / (df_chart18['Height'] ** 2)
+
+            f1 = (df_chart18['family_history_with_overweight'] == 'yes').astype(int)
+            f2 = (df_chart18['FAVC'] == 'yes').astype(int)
+            f3 = (df_chart18['FAF'] < 1).astype(int)
+            df_chart18['Risk_Score'] = f1 + f2 + f3
+
+            risk_summary = df_chart18.groupby('Risk_Score')['BMI'].mean().reset_index()
+
+            custom_colors = ['#FFF5F0', '#FCAE91', '#D64740', '#580F18']
+
+            bars = ax.bar(
+                risk_summary['Risk_Score'].astype(str),
+                risk_summary['BMI'],
+                color=custom_colors[:len(risk_summary)],
+                edgecolor='black',
+                linewidth=0.8,
+                width=0.8
+            )
+
+            for i, bar in enumerate(bars):
+                height = bar.get_height()
+                text_color = 'white' if i >= 2 else 'black'
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2.,
+                    height / 2.,
+                    f"{height:.2f}",
+                    ha='center', 
+                    va='center',
+                    color=text_color,
+                    fontweight='bold',
+                    fontsize=10.5
+                )
+
+            ax.set_title("Cumulative Risk Factor Score vs. Average BMI", fontweight="bold", fontsize=12)
+            ax.set_xlabel("Number of High-Risk Factors (Family History + FAVC + Low FAF)")
+            ax.set_ylabel(r"Mean BMI ($kg/m^2$)")
+
+            ax.set_ylim(0, 35)
+
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+
+            # Chart 19: Detailed BMI Distribution Across Transportation Modes 
+            st.subheader("19. Detailed BMI Distribution Across Transportation Modes (MTRANS)")
+            fig, ax = plt.subplots(figsize=(9.5, 5.5))
+
+            df_chart19 = df.copy()
+            if 'BMI' not in df_chart19.columns:
+                df_chart19['BMI'] = df_chart19['Weight'] / (df_chart19['Height'] ** 2)
+
+            mtrans_order = ['Public_Transportation', 'Walking', 'Automobile', 'Motorbike', 'Bike']
+            custom_colors = {
+                'Public_Transportation': '#8CBFC1',
+                'Walking': '#FCF39B',
+                'Automobile': '#BFBBD5',
+                'Motorbike': '#E9887C',
+                'Bike': '#7A9FB8'
+            }
+
+            sns.boxenplot(
+                data=df_chart19,
+                x='MTRANS',
+                y='BMI',
+                order=mtrans_order,
+                palette=custom_colors,
+                ax=ax
+            )
+
+            ax.set_title("Detailed BMI Distribution Across Transportation Modes (MTRANS)", fontweight="bold", fontsize=12)
+            ax.set_xlabel("Transportation Mode (MTRANS)")
+            ax.set_ylabel(r"BMI ($kg/m^2$)")
+
+            plt.xticks(rotation=0)
+
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+
+            # Chart 20: Radar Chart for Lifestyle Profile
+            st.subheader("20. Lifestyle Behavioral Profile: Normal Weight vs. Obesity Type III")
+ 
+            features = ['FCVC', 'NCP', 'CH2O', 'FAF', 'TUE']
+            feature_labels = [
+                'Veggie Intake\n(FCVC)',
+                'Main Meals\n(NCP)',
+                'Water Intake\n(CH2O)',
+                'Physical Activity\n(FAF)',
+                'Screen Time\n(TUE)'
+            ]
+
+            df_chart20 = df.copy()
+            for col in features:
+                min_val = df_chart20[col].min()
+                max_val = df_chart20[col].max()
+                df_chart20[col + '_norm'] = (df_chart20[col] - min_val) / (max_val - min_val) if max_val > min_val else 0
+
+            norm_cols = [c + '_norm' for c in features]
+
+            mean_normal = df_chart20[df_chart20['NObeyesdad'] == 'Normal_Weight'][norm_cols].mean().values
+            mean_obese3 = df_chart20[df_chart20['NObeyesdad'] == 'Obesity_Type_III'][norm_cols].mean().values
+
+            num_vars = len(features)
+            angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+
+            mean_normal = np.concatenate((mean_normal, [mean_normal[0]]))
+            mean_obese3 = np.concatenate((mean_obese3, [mean_obese3[0]]))
+            angles = np.concatenate((angles, [angles[0]]))
+
+            fig, ax = plt.subplots(figsize=(8, 7), subplot_kw=dict(polar=True))
+
+            ax.set_theta_offset(np.pi / 2)
+            ax.set_theta_direction(-1)
+
+            ax.set_xticks(angles[:-1])
+            ax.set_xticklabels(feature_labels, fontsize=10, color='#333333')
+
+            color_normal = '#17C3B2'
+            color_obese3 = '#EE6C4D'
+
+            ax.plot(angles, mean_normal, color=color_normal, linewidth=2, label='Normal Weight')
+            ax.fill(angles, mean_normal, color=color_normal, alpha=0.18)
+
+            ax.plot(angles, mean_obese3, color=color_obese3, linewidth=2, label='Obesity Type III')
+            ax.fill(angles, mean_obese3, color=color_obese3, alpha=0.18)
+
+            ax.set_rlabel_position(35) 
+            ax.set_rticks([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+            ax.set_yticklabels(['0.1', '0.2', '0.3', '0.4', '0.5', '0.6'], color='#555555', fontsize=9)
+            ax.set_ylim(0, 0.68)
+
+            ax.grid(True, color='#D3D3D3', linestyle='-', linewidth=0.8)
+            ax.spines['polar'].set_color('#D3D3D3')
+
+            ax.legend(loc='upper right', bbox_to_anchor=(1.25, 1.08), fontsize=10.5, frameon=True)
+
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+            st.markdown("---")
+
+            
 elif page == "About":
     st.title("ℹ️ About This Project")
     st.markdown("---")
