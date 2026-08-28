@@ -47,7 +47,7 @@ except Exception:
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio(
-    "Choose a page", ["Home", "Prediction", "Compare Models", "EDA", "About"]
+    "Choose a page", ["Home", "EDA", "Prediction", "Compare Models", "Extra"]
 )
 
 
@@ -55,20 +55,30 @@ if page == "Home":
     st.title("🏥 Obesity Prediction System")
     st.markdown("---")
 
-    st.header("Project Overview")
-    st.write(
+    col1, col2 = st.columns([1, 3]) 
+    with col1: 
+        st.image(r"kpj.jpeg")
+    with col2: 
+        st.header("The Background")
+        st.write(
         """
-This system predicts a person's obesity level using Machine Learning, developed
-to support healthcare organisations such as **KPJ Healthcare Berhad** in the
-early identification of obesity risk through data-driven, preventive care.
+KPJ Healthcare Berhad is one of Malaysia’s leading private healthcare providers. As a prominent organisation in the healthcare sector, KPJ is interested in leveraging machine learning to enhance healthcare services, support early disease detection, and improve preventive care. 
 
-The application allows users to:
-- Predict obesity level based on physical habits and lifestyle attributes.
-- Explore 20 Seaborn/Matplotlib visualizations matching exact Jupyter specifications.
-- Compare three machine learning models.
-- View model performance metrics and algorithm summaries.
 """
     )
+
+    st.markdown("---")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.header("The Problem")
+        st.write("""Obesity is an increasingly prevalent health concern and is associated with a range of serious health complications. Early identification of obesity risk can support timely intervention and preventive care. However, identifying individuals at risk can be challenging due to the range of demographic, dietary, and lifestyle factors that contribute to obesity.""")
+    with col2: 
+        st.header("The Solution")
+        st.write("""We present the Obesity Prediction App, a machine learning–based tool designed to assist healthcare professionals with the preliminary assessment of an individual’s obesity level.The application analyses demographic characteristics, eating habits, and lifestyle behaviours to predict an individual's obesity category. By providing an initial risk assessment, the system aims to support healthcare professionals in identifying individuals who may benefit from further evaluation and early preventive intervention.""")
+
+    st.warning("This application is a student-developed prototype and is not intended to provide medical diagnoses or replace professional medical advice. Rather, the project demonstrates how machine learning can be applied to support healthcare organisations, such as KPJ Healthcare Berhad, in the early identification and management of obesity risk.")
+    
 
     st.markdown("---")
     st.header("📊 Dataset at a Glance")
@@ -338,9 +348,6 @@ elif page == "Prediction":
                 )
                 st.stop()
 
-            # -------------------------------------------------------------
-            # 【修复位置】：强制转换类型为 float，允许接收 Scalar 的浮点数
-            # -------------------------------------------------------------
             prepared_input = input_data.copy().astype(float)
 
             prepared_input.loc[:, pre_scaler.feature_names_in_] = pre_scaler.transform(
@@ -691,9 +698,9 @@ identifying Normal_Weight cases (recall = 0.54).
 # EDA PAGE (20 MATCHING JUPYTER CHARTS)
 # ======================================
 elif page == "EDA":
-    st.title("📊 Exploratory Data Analysis (Exact Jupyter Specifications)")
+    st.title("📊 Exploratory Data Analysis")
     st.write(
-        "Explore interactive visualizations matching exact layout, titles, and plot types from the Notebook pipeline."
+        "Explore visualisations from our Exploratory Data Analysis."
     )
     st.markdown("---")
 
@@ -1215,9 +1222,6 @@ elif page == "EDA":
         # SECTION 4: CHARTS 15–20
         # -----------------------------
         with t4:
-            st.subheader("15–20. Advanced Risk Profiling")
-            st.info("Additional advanced risk profile visualizations based on lifestyle and medical background.")
-
             # Chart 15: Split Violin Plot for Gender & CALC on BMI 
             st.subheader("15. Dual Effect of Gender & Alcohol Consumption (CALC) on BMI")
             fig, ax = plt.subplots(figsize=(9.5, 5.5))
@@ -1510,30 +1514,9 @@ elif page == "EDA":
             st.markdown("---")
 
             
-elif page == "About":
+elif page == "Extra":
     st.title("ℹ️ About This Project")
     st.markdown("---")
-
-    st.subheader("📌 Project Background")
-    st.write(
-        """
-This project was developed to demonstrate how machine learning can support
-healthcare organisations, such as **KPJ Healthcare Berhad**, in the early
-identification of obesity risk. By analysing demographic characteristics,
-eating habits, and lifestyle behaviours, the system predicts an individual's
-obesity level and can assist healthcare professionals in providing more
-timely preventive care.
-        """
-    )
-
-    st.subheader("🎯 Objective")
-    st.write(
-        """
-To develop and compare machine learning classification models (KNN, Decision
-Tree, and SVM) that predict obesity levels, and to deploy the best-performing
-model (Decision Tree, 96.88% test accuracy) as an interactive prediction tool.
-        """
-    )
 
     st.subheader("📊 Dataset")
     st.write(
