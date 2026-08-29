@@ -1,10 +1,13 @@
 import math
+import json
+from pathlib import Path
 import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import streamlit as st
+from sklearn.preprocessing import MinMaxScaler
 
 sns.set_theme(style="whitegrid")
 plt.rc("font", size=10)
@@ -698,6 +701,171 @@ identifying Normal_Weight cases (recall = 0.54).
 # EDA PAGE (20 MATCHING JUPYTER CHARTS)
 # ======================================
 elif page == "EDA":
+    st.title("📊 Exploratory Data Analysis")
+    st.write(
+        "Explore the 20 EDA visualisations exactly as they appear in "
+        "Assignment Data Science.ipynb."
+    )
+    st.markdown("---")
+
+    chart_titles = [
+        "Height vs Weight by Obesity Category",
+        "Age Distribution across Obesity Levels",
+        "Gender Proportion within Each Obesity Level",
+        "Impact of Family History on BMI Density Distribution",
+        "Vegetable Consumption Frequency across Obesity Levels",
+        "Main Meals & High-Calorie Food on BMI",
+        "Snack Consumption vs Obesity Levels",
+        "Daily Water Consumption across Key Categories",
+        "Alcohol Consumption Frequency vs Mean BMI",
+        "Physical Activity and Tech Use by Gender",
+        "Physical Activity and Family History",
+        "Physical Activity by Transportation Method",
+        "Calorie Monitoring & Smoking on BMI",
+        "Transportation Disparities between Extreme Weight Groups",
+        "Gender & Alcohol Consumption on BMI",
+        "Obesity Tier Composition by Smoking Status",
+        "Family History & High-Caloric Food on BMI",
+        "Cumulative Risk Factor Score vs Average BMI",
+        "BMI Distribution across Transportation Modes",
+        "Lifestyle Profile: Normal Weight vs Obesity Type III",
+    ]
+    chart_groups = [
+        ("📍 Group 1: Body Characteristics (1–4)", 0, 4),
+        ("📍 Group 2: Dietary Habits (5–9)", 4, 9),
+        ("📍 Group 3: Lifestyle & Physical Activity (10–14)", 9, 14),
+        ("📍 Section 4: Advanced Risk Profiling (15–20)", 14, 20),
+    ]
+    tabs = st.tabs([group[0] for group in chart_groups])
+    graph_directory = Path(__file__).with_name("eda_graphs")
+
+    for tab, (_, start, end) in zip(tabs, chart_groups):
+        with tab:
+            for chart_index in range(start, end):
+                st.subheader(f"{chart_index + 1}. {chart_titles[chart_index]}")
+                graph_path = graph_directory / f"chart_{chart_index + 1:02d}.png"
+                if graph_path.exists():
+                    st.image(str(graph_path))
+                else:
+                    st.error(f"⚠️ Missing notebook chart: {graph_path.name}")
+                if chart_index + 1 < end:
+                    st.markdown("---")
+
+# Previous dynamic notebook renderer retained as a non-navigation reference.
+elif page == "__notebook_runtime_EDA":
+    st.title("📊 Exploratory Data Analysis")
+    st.write(
+        "These are the same 20 EDA visualisations, in the same order and with "
+        "the same plotting code, as the Jupyter notebook."
+    )
+    st.markdown("---")
+
+    if df_raw is None:
+        st.error("⚠️ Dataset file not found.")
+    else:
+        notebook_path = Path(__file__).with_name("Assignment Data Science.ipynb")
+
+        try:
+            with notebook_path.open(encoding="utf-8") as notebook_file:
+                notebook = json.load(notebook_file)
+        except (OSError, json.JSONDecodeError) as error:
+            st.error(f"⚠️ Unable to load the EDA notebook: {error}")
+        else:
+            # These are the exact 20 executed EDA chart cells in the notebook.
+            chart_cells = [
+                (94, "Height vs Weight by Obesity Category"),
+                (96, "Age Distribution across Obesity Levels"),
+                (98, "Gender Proportion within Each Obesity Level"),
+                (100, "Impact of Family History on BMI Density Distribution"),
+                (103, "Vegetable Consumption Frequency across Obesity Levels"),
+                (105, "Main Meals & High-Calorie Food on BMI"),
+                (107, "Snack Consumption vs Obesity Levels"),
+                (109, "Daily Water Consumption across Key Categories"),
+                (111, "Alcohol Consumption Frequency vs Mean BMI"),
+                (114, "Physical Activity and Tech Use by Gender"),
+                (116, "Physical Activity and Family History"),
+                (118, "Physical Activity by Transportation Method"),
+                (120, "Calorie Monitoring & Smoking on BMI"),
+                (122, "Transportation Disparities between Extreme Weight Groups"),
+                (125, "Gender & Alcohol Consumption on BMI"),
+                (127, "Obesity Tier Composition by Smoking Status"),
+                (129, "Family History & High-Caloric Food on BMI"),
+                (131, "Cumulative Risk Factor Score vs Average BMI"),
+                (133, "BMI Distribution across Transportation Modes"),
+                (135, "Lifestyle Profile: Normal Weight vs Obesity Type III"),
+            ]
+
+            cells = notebook.get("cells", [])
+            if len(cells) <= chart_cells[-1][0]:
+                st.error("⚠️ The notebook does not contain the expected 20 EDA cells.")
+            else:
+                obesity_plot = df_raw.copy()
+                obesity_order = [
+                    "Insufficient_Weight",
+                    "Normal_Weight",
+                    "Obesity_Type_I",
+                    "Obesity_Type_II",
+                    "Obesity_Type_III",
+                    "Overweight_Level_I",
+                    "Overweight_Level_II",
+                ]
+
+                # Match the plotting setup used immediately before the 20 charts.
+                sns.set_theme(style="whitegrid")
+                plt.rcParams["figure.dpi"] = 120
+                plt.rcParams["font.sans-serif"] = "DejaVu Sans"
+
+                groups = [
+                    ("📍 Group 1: Body Characteristics (1–4)", 0, 4),
+                    ("📍 Group 2: Dietary Habits (5–9)", 4, 9),
+                    ("📍 Group 3: Lifestyle & Physical Activity (10–14)", 9, 14),
+                    ("📍 Section 4: Advanced Risk Profiling (15–20)", 14, 20),
+                ]
+                tabs = st.tabs([group[0] for group in groups])
+
+                # Give the notebook cells the same variables/imports they had when
+                # originally executed. Only the 20 reviewed chart cells are run.
+                chart_namespace = {
+                    "np": np,
+                    "pd": pd,
+                    "plt": plt,
+                    "sns": sns,
+                    "MinMaxScaler": MinMaxScaler,
+                    "obesity_plot": obesity_plot,
+                    "obesity_order": obesity_order,
+                }
+
+                original_show = plt.show
+
+                def show_in_streamlit(*_args, **_kwargs):
+                    figure = plt.gcf()
+                    st.pyplot(figure)
+                    plt.close(figure)
+
+                try:
+                    plt.show = show_in_streamlit
+                    for tab, (_, start, end) in zip(tabs, groups):
+                        with tab:
+                            for chart_number in range(start, end):
+                                cell_index, chart_title = chart_cells[chart_number]
+                                st.subheader(f"{chart_number + 1}. {chart_title}")
+                                source = "".join(cells[cell_index].get("source", []))
+                                exec(
+                                    compile(source, f"{notebook_path.name}:cell-{cell_index}", "exec"),
+                                    chart_namespace,
+                                )
+                                if chart_number + 1 < end:
+                                    st.markdown("---")
+                except Exception as error:
+                    st.error(
+                        f"⚠️ Unable to render chart {chart_number + 1} "
+                        f"from the notebook: {error}"
+                    )
+                finally:
+                    plt.show = original_show
+
+# Retained temporarily as a reference for the former hand-recreated charts.
+elif page == "__legacy_EDA":
     st.title("📊 Exploratory Data Analysis")
     st.write(
         "Explore visualisations from our Exploratory Data Analysis."
