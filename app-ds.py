@@ -703,8 +703,7 @@ identifying Normal_Weight cases (recall = 0.54).
 elif page == "EDA":
     st.title("📊 Exploratory Data Analysis")
     st.write(
-        "Explore the 20 EDA visualisations exactly as they appear in "
-        "Assignment Data Science.ipynb."
+        "Explore the 20 EDA visualisations to better understand the data. "
     )
     st.markdown("---")
 
